@@ -12,6 +12,10 @@ BEGIN
 	DECLARE xItem LONGTEXT CHARSET utf8;
 	DECLARE i INT DEFAULT 1;
 
+	IF NOT rkr$map$valid(arg_data) THEN
+		RETURN arg_default;
+	END IF;
+
 	WHILE i < xCount DO
 		SET xItem = rkr$array$get(i);
 		IF rkr$array$get(xItem, 1) = arg_key THEN
@@ -34,10 +38,13 @@ BEGIN
 	DECLARE xItem LONGTEXT CHARSET utf8;
 	DECLARE i INT DEFAULT 1;
 
+	CALL rkr$map$init(arg_data);
 	CALL rkr$array$push(xItem, arg_key);
 	CALL rkr$array$push(xItem, arg_value);
 	CALL rkr$map$remove(arg_data, arg_key);
+	SET arg_data = SUBSTR(arg_data, 3);
 	CALL rkr$array$push(arg_data, xItem);
+	SET arg_data = CONCAT('m$', arg_data);
 END//
 
 
@@ -51,6 +58,12 @@ body: BEGIN
 	DECLARE xItem LONGTEXT CHARSET utf8;
 	DECLARE i INT DEFAULT 1;
 
+	IF NOT rkr$map$valid(arg_data) THEN
+		LEAVE body;
+	END IF;
+
+	SET arg_data = SUBSTR(arg_data, 3);
+
 	WHILE i < xCount DO
 		SET xItem = rkr$array$get(i);
 		IF rkr$array$get(xItem, 1) = arg_key THEN
@@ -59,6 +72,31 @@ body: BEGIN
 		END IF;
 		SET i = i + 1;
 	END WHILE;
+
+	SET arg_data = CONCAT('m$', arg_data);
+END //
+
+
+DROP PROCEDURE IF EXISTS rkr$map$init //
+CREATE PROCEDURE rkr$map$init(INOUT arg_data LONGTEXT CHARSET utf8)
+	NO SQL
+	SQL SECURITY INVOKER
+	DETERMINISTIC
+BEGIN
+	IF NOT rkr$map$valid(arg_data) THEN
+		SET arg_data = 'm$';
+	END IF;
+END //
+
+
+DROP FUNCTION IF EXISTS rkr$map$valid //
+CREATE FUNCTION rkr$map$valid(arg_data LONGTEXT CHARSET utf8)
+	RETURNS BOOLEAN
+	NO SQL
+	SQL SECURITY INVOKER
+	DETERMINISTIC
+BEGIN
+	RETURN IF(SUBSTR(arg_data, 1, 3) = 'm$', true, false);
 END //
 
 
