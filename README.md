@@ -3,6 +3,13 @@ eav-test
 
 MySQL EAV Datastructure
 
+
+First, you need to set a recursion limit:
+```MYSQL
+SET max_sp_recursion_depth = 100;
+```
+
+Then you can store and fetch data by xml:
 ```MYSQL
 SET @xmlData = '
 	<e name="base">
@@ -17,7 +24,7 @@ SET @xmlData = '
 		<a type="str" name="name">Test data-structure</a>
 		<a type="str" name="description">This is my data based on a eav schema.</a>
 	</e>';
-	
+
 CALL eav__entity__store_xml('some/path', @xmlData);
 
 SELECT eav__entity__fetch_xml('some/path', null);

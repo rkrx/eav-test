@@ -4,34 +4,69 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
 
-CREATE TABLE IF NOT EXISTS `eav__attributes` (
-  `id` char(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `entity_id` char(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `attr_name` varchar(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `attr_type` enum('int','dec','str','date') CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'str',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_attribute` (`entity_id`,`attr_name`),
-  CONSTRAINT `FK_eav__attributes_eav__entities` FOREIGN KEY (`entity_id`) REFERENCES `eav__entities` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+CREATE TABLE IF NOT EXISTS eav__attributes (
+  id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  entity_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  attr_name VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  attr_type ENUM('int','dec','str','date') CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'str',
+  PRIMARY KEY (id),
+  UNIQUE KEY unique_attribute (entity_id,attr_name),
+  CONSTRAINT FK_eav__attributes_eav__entities FOREIGN KEY (entity_id) REFERENCES eav__entities (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
-CREATE TABLE IF NOT EXISTS `eav__entities` (
-  `id` char(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `parent_id` char(36) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
-  `entity_create_date` datetime DEFAULT '2000-01-01 00:00:00',
-  `entity_modify_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `entity_path` varchar(1024) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
-  `entity_name` varchar(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `entity_name` (`entity_name`,`parent_id`),
-  KEY `entity_path` (`entity_path`(255)),
-  KEY `FK_eav__entities_eav__entities` (`parent_id`),
-  CONSTRAINT `FK_eav__entities_eav__entities` FOREIGN KEY (`parent_id`) REFERENCES `eav__entities` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+CREATE TABLE IF NOT EXISTS eav__entities (
+  id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  parent_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
+  entity_create_date datetime DEFAULT '2000-01-01 00:00:00',
+  entity_modify_date timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  entity_path VARCHAR(1024) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
+  entity_name VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+  PRIMARY KEY (id),
+  UNIQUE KEY entity_name (entity_name,parent_id),
+  KEY entity_path (entity_path(255)),
+  KEY FK_eav__entities_eav__entities (parent_id),
+  CONSTRAINT FK_eav__entities_eav__entities FOREIGN KEY (parent_id) REFERENCES eav__entities (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
+CREATE TABLE IF NOT EXISTS eav__values_date (
+	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+	attr_value DATETIME DEFAULT NULL,
+	PRIMARY KEY (attr_id),
+	CONSTRAINT FK_eav__values_date_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS eav__values_dec (
+	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+	attr_value DOUBLE DEFAULT NULL,
+	PRIMARY KEY (attr_id),
+	CONSTRAINT FK_eav__values_dec_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS eav__values_int (
+	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+	attr_value INT(11) DEFAULT NULL,
+	PRIMARY KEY (attr_id),
+	CONSTRAINT FK_eav__values_int_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS eav__values_str (
+	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+	attr_value longtext COLLATE utf8_unicode_ci,
+	PRIMARY KEY (attr_id),
+	CONSTRAINT FK_eav__values_str_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+DROP FUNCTION IF EXISTS eav__entity__attribute__get;
 DELIMITER //
-CREATE FUNCTION `eav__entity__attribute__get`(`arg_entity_id` CHAR(36), `arg_attribute` VARCHAR(255), `arg_default` LONGTEXT) RETURNS longtext CHARSET latin1
+CREATE FUNCTION eav__entity__attribute__get(arg_entity_id CHAR(36), arg_attribute VARCHAR(255), arg_default LONGTEXT)
+	RETURNS LONGTEXT CHARSET utf8
+	DETERMINISTIC
 BEGIN
 	DECLARE xId CHAR(36) DEFAULT null;
 	DECLARE xType VARCHAR(16) DEFAULT null;
@@ -84,10 +119,12 @@ END//
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS eav__entity__attribute__has;
 DELIMITER //
-CREATE FUNCTION `eav__entity__attribute__has`(`arg_entity_id` CHAR(36)) RETURNS tinyint(1)
+CREATE FUNCTION eav__entity__attribute__has(arg_entity_id CHAR(36)) RETURNS TINYINT(1)
     READS SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE xId CHAR(36) DEFAULT null;
 	
@@ -106,10 +143,12 @@ END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS eav__entity__attribute__set;
 DELIMITER //
-CREATE PROCEDURE `eav__entity__attribute__set`(IN `arg_entity_id` CHAR(36), IN `arg_attribute` VARCHAR(255), IN `arg_type` VARCHAR(50), IN `arg_value` LONGTEXT)
+CREATE PROCEDURE eav__entity__attribute__set(IN arg_entity_id CHAR(36), IN arg_attribute VARCHAR(255), IN arg_type VARCHAR(50), IN arg_value LONGTEXT)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE xId CHAR(36) DEFAULT null;
 	
@@ -123,30 +162,33 @@ BEGIN
 	VALUES
 		(xId, arg_entity_id, arg_attribute, arg_type);
 		
-	IF arg_type = "str" THEN
+	IF arg_type = 'str' THEN
 		INSERT INTO eav__values_str SET attr_id=xId, attr_value=arg_value;
 	END IF;
 		
-	IF arg_type = "int" THEN
+	IF arg_type = 'int' THEN
 		INSERT INTO eav__values_int SET attr_id=xId, attr_value=arg_value;
 	END IF;
 		
-	IF arg_type = "dec" THEN
+	IF arg_type = 'dec' THEN
 		INSERT INTO eav__values_dec SET attr_id=xId, attr_value=arg_value;
 	END IF;
 		
-	IF arg_type = "date" THEN
+	IF arg_type = 'date' THEN
 		INSERT INTO eav__values_date SET attr_id=xId, attr_value=arg_value;
 	END IF;
 END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS eav__entity__build_xml_attributes;
 DELIMITER //
-CREATE PROCEDURE `eav__entity__build_xml_attributes`(IN `arg_entity_id` CHAR(36), IN `arg_level` INT, OUT `arg_out` longtEXT)
+CREATE PROCEDURE eav__entity__build_xml_attributes(IN arg_entity_id CHAR(36), IN arg_level INT, OUT arg_out longtEXT)
+	READS SQL DATA
+	DETERMINISTIC
 BEGIN
 	DECLARE finished INT DEFAULT 0;
-	DECLARE attrName VARCHAR(255) DEFAULT "";
+	DECLARE attrName VARCHAR(255) DEFAULT '';
 	DECLARE attrType LONGTEXT;
 	DECLARE attrValue LONGTEXT;
 	DECLARE ls VARCHAR(255);
@@ -172,12 +214,14 @@ BEGIN
 			LEAVE getAttributes;
 		END IF;
 		
-		SET attrValue = eav__entity__attribute__get(arg_entity_id, attrName, "");
+		SET attrValue = eav__entity__attribute__get(arg_entity_id, attrName, '');
 		
 		SET ls = REPEAT("\t", arg_level);
 		
 		SET arg_out = CONCAT(arg_out, 
-				ls, '<a type="', attrType, '" name="', eav__xml__escape(attrName), '">', eav__xml__escape(attrValue), '</a>', "\n"
+				ls, '<a type="', attrType, '" name="', eav__xml__escape(attrName), '">',
+					eav__xml__escape(attrValue),
+				'</a>', "\n"
 			);
 	END LOOP getAttributes;
 	
@@ -186,10 +230,12 @@ END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS eav__entity__build_xml_children;
 DELIMITER //
-CREATE PROCEDURE `eav__entity__build_xml_children`(IN `arg_id` CHAR(36), IN `arg_level` INT, IN `arg_max_level` INT, OUT `arg_out` LONGTEXT)
+CREATE PROCEDURE eav__entity__build_xml_children(IN arg_id CHAR(36), IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT)
     READS SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE finished INT DEFAULT 0;
 	DECLARE childId CHAR(36) DEFAULT 0;
@@ -222,10 +268,12 @@ END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS eav__entity__build_xml_from_id;
 DELIMITER //
-CREATE PROCEDURE `eav__entity__build_xml_from_id`(IN `arg_id` CHAR(36), IN `arg_level` INT, IN `arg_max_level` INT, OUT `arg_out` LONGTEXT)
+CREATE PROCEDURE eav__entity__build_xml_from_id(IN arg_id CHAR(36), IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT)
     READS SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE finished INT DEFAULT 0;
 	DECLARE childId CHAR(36) DEFAULT 0;
@@ -263,10 +311,13 @@ END//
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS eav__entity__fetch_xml;
 DELIMITER //
-CREATE FUNCTION `eav__entity__fetch_xml`(`arg_path` VARCHAR(512), `arg_max_level` INT) RETURNS longtext CHARSET latin1
+CREATE FUNCTION eav__entity__fetch_xml(arg_path VARCHAR(512), arg_max_level INT)
+	RETURNS LONGTEXT CHARSET utf8
     READS SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE id CHAR(36) DEFAULT null;
 	DECLARE res LONGTEXT;
@@ -278,16 +329,19 @@ END//
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS eav__entity__get_id_from_path;
 DELIMITER //
-CREATE FUNCTION `eav__entity__get_id_from_path`(`path` VARCHAR(255), `createIfMissing` TINYINT(1)) RETURNS char(36) CHARSET latin1
+CREATE FUNCTION eav__entity__get_id_from_path(path VARCHAR(255), createIfMissing TINYINT(1))
+	RETURNS CHAR(36) CHARSET latin1
     READS SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE xPathDepth INT;
 	DECLARE i INT DEFAULT 1;
 	DECLARE xId CHAR(36) DEFAULT null;
 	DECLARE xParentId CHAR(36) DEFAULT null;
-	DECLARE xPart VARCHAR(1024) DEFAULT "";
+	DECLARE xPart VARCHAR(1024) DEFAULT '';
 
 	SET xPathDepth = eav__path__get_depth(path);
 	
@@ -333,13 +387,16 @@ END//
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS eav__entity__get_path_from_id;
 DELIMITER //
-CREATE FUNCTION `eav__entity__get_path_from_id`(`arg_id` CHAR(36)) RETURNS varchar(512) CHARSET latin1
+CREATE FUNCTION eav__entity__get_path_from_id(arg_id CHAR(36))
+	RETURNS VARCHAR(512) CHARSET latin1
     READS SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
-	DECLARE xPath VARCHAR(1024) DEFAULT "";
-	DECLARE xName VARCHAR(1024) DEFAULT "";
+	DECLARE xPath VARCHAR(1024) DEFAULT '';
+	DECLARE xName VARCHAR(1024) DEFAULT '';
 	DECLARE xId CHAR(36) DEFAULT null;
 	DECLARE xParentId CHAR(36) DEFAULT null;
 	
@@ -372,10 +429,13 @@ END//
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS eav__entity__remove;
 DELIMITER //
-CREATE FUNCTION `eav__entity__remove`(`path` VARCHAR(512)) RETURNS tinyint(1)
+CREATE FUNCTION eav__entity__remove(path VARCHAR(512))
+	RETURNS TINYINT(1)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DELETE FROM eav__entities WHERE id = eav__entity__get_id_from_path(path, 0);
 	RETURN ROW_COUNT() > 0;
@@ -383,10 +443,12 @@ END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS eav__entity__store_attributes;
 DELIMITER //
-CREATE DEFINER=`root`@`%` PROCEDURE `eav__entity__store_attributes`(IN `arg_entity_id` CHAR(36), IN `arg_xml` LONGTEXT, IN `arg_xpath` VARCHAR(512))
+CREATE PROCEDURE eav__entity__store_attributes(IN arg_entity_id CHAR(36), IN arg_xml LONGTEXT, IN arg_xpath VARCHAR(512))
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE xAttrCount INT DEFAULT 0;
 	DECLARE xAttrName VARCHAR(255) DEFAULT 0;
@@ -410,8 +472,11 @@ END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS eav__entity__store_entity;
 DELIMITER //
-CREATE PROCEDURE `eav__entity__store_entity`(IN `arg_entity_id` CHAR(36), IN `arg_xml` LONGTEXT, IN `arg_xpath` VARCHAR(255))
+CREATE PROCEDURE eav__entity__store_entity(IN arg_entity_id CHAR(36), IN arg_xml LONGTEXT, IN arg_xpath VARCHAR(255))
+	MODIFIES SQL DATA
+	DETERMINISTIC
 BEGIN
 	DECLARE xChildCount INT DEFAULT 0;
 	DECLARE xEntityId CHAR(36) DEFAULT null;
@@ -447,10 +512,12 @@ END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS eav__entity__store_xml;
 DELIMITER //
-CREATE PROCEDURE `eav__entity__store_xml`(IN `arg_path` VARCHAR(255), IN `arg_xml` LONGTEXT)
+CREATE PROCEDURE eav__entity__store_xml(IN arg_path VARCHAR(255), IN arg_xml LONGTEXT)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE xEntityId CHAR(36) DEFAULT null;
 	
@@ -461,10 +528,12 @@ END//
 DELIMITER ;
 
 
+DROP PROCEDURE IF EXISTS eav__entity__update_paths;
 DELIMITER //
-CREATE PROCEDURE `eav__entity__update_paths`()
+CREATE PROCEDURE eav__entity__update_paths()
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	UPDATE
 		eav__entities
@@ -476,11 +545,14 @@ END//
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS eav__path__add;
 DELIMITER //
-CREATE DEFINER=`root`@`%` FUNCTION `eav__path__add`(`arg_path` VARCHAR(512), `arg_part` VARCHAR(512)) RETURNS varchar(512) CHARSET latin1
+CREATE FUNCTION eav__path__add(arg_path VARCHAR(512), arg_part VARCHAR(512))
+	RETURNS VARCHAR(512) CHARSET latin1
     NO SQL
     DETERMINISTIC
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	DECLARE res VARCHAR(512);
 	SET res = CONCAT(TRIM(BOTH '/' FROM arg_path), '/', TRIM(BOTH '/' FROM arg_part));
@@ -489,22 +561,26 @@ END//
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS eav__path__get_depth;
 DELIMITER //
-CREATE FUNCTION `eav__path__get_depth`(`path` varchar(255)) RETURNS int(11)
+CREATE FUNCTION eav__path__get_depth(path VARCHAR(255)) RETURNS int(11)
     NO SQL
     DETERMINISTIC
     SQL SECURITY INVOKER
+	DETERMINISTIC
 BEGIN
 	RETURN LENGTH(path) - LENGTH(REPLACE(path, '/', '')) + 1;
 END//
 DELIMITER ;
 
 
+DROP FUNCTION IF EXISTS eav__path__get_part;
 DELIMITER //
-CREATE FUNCTION `eav__path__get_part`(`arg_path` VARCHAR(255), `arg_pos` INT) RETURNS varchar(255) CHARSET latin1
+CREATE FUNCTION eav__path__get_part(arg_path VARCHAR(255), arg_pos INT)
+	RETURNS VARCHAR(255) CHARSET latin1
     NO SQL
-    DETERMINISTIC
     SQL SECURITY INVOKER
+    DETERMINISTIC
 BEGIN
 	DECLARE delimiter CHAR(1) DEFAULT '/';
 	RETURN REPLACE(SUBSTRING(SUBSTRING_INDEX(arg_path, delimiter, arg_pos), LENGTH(SUBSTRING_INDEX(arg_path, delimiter, arg_pos - 1)) + 1), delimiter, '');
@@ -512,43 +588,12 @@ END//
 DELIMITER ;
 
 
-CREATE TABLE IF NOT EXISTS `eav__values_date` (
-  `attr_id` char(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `attr_value` datetime DEFAULT NULL,
-  PRIMARY KEY (`attr_id`),
-  CONSTRAINT `FK_eav__values_date_eav__attributes` FOREIGN KEY (`attr_id`) REFERENCES `eav__attributes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `eav__values_dec` (
-  `attr_id` char(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `attr_value` double DEFAULT NULL,
-  PRIMARY KEY (`attr_id`),
-  CONSTRAINT `FK_eav__values_dec_eav__attributes` FOREIGN KEY (`attr_id`) REFERENCES `eav__attributes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `eav__values_int` (
-  `attr_id` char(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `attr_value` int(11) DEFAULT NULL,
-  PRIMARY KEY (`attr_id`),
-  CONSTRAINT `FK_eav__values_int_eav__attributes` FOREIGN KEY (`attr_id`) REFERENCES `eav__attributes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS `eav__values_str` (
-  `attr_id` char(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-  `attr_value` longtext COLLATE utf8_unicode_ci,
-  PRIMARY KEY (`attr_id`),
-  CONSTRAINT `FK_eav__values_str_eav__attributes` FOREIGN KEY (`attr_id`) REFERENCES `eav__attributes` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
+DROP FUNCTION IF EXISTS eav__xml__escape;
 DELIMITER //
-CREATE FUNCTION `eav__xml__escape`(`arg_data` LONGTEXT) RETURNS longtext CHARSET latin1
+CREATE FUNCTION eav__xml__escape(arg_data LONGTEXT) RETURNS longtext CHARSET latin1
     NO SQL
-    DETERMINISTIC
     SQL SECURITY INVOKER
+    DETERMINISTIC
 BEGIN
 	SET @xmlData = arg_data;
 	SET @xmlData = REPLACE(@xmlData, '&', '&amp;');
@@ -558,6 +603,8 @@ BEGIN
 	RETURN @xmlData;
 END//
 DELIMITER ;
+
+
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
