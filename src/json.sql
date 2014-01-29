@@ -10,6 +10,9 @@ CREATE FUNCTION rkr$json$parse(arg_src LONGTEXT CHARSET utf8)
 BEGIN
 	DECLARE xCursor INT DEFAULT 1;
 	DECLARE xResult LONGTEXT CHARSET utf8 DEFAULT '';
+
+	CALL rkr$debug(arg_src);
+
 	CALL rkr$json$parse_container(arg_src, xCursor, xResult);
 	RETURN xResult;
 END//
@@ -28,8 +31,7 @@ BEGIN
 	ELSEIF SUBSTR(arg_src, arg_cursor, 1) = '[' THEN
 		CALL rkr$json$parse_array(arg_src, arg_cursor, arg_result);
 	ELSE
-		SET @debug = 'EXCEPTION @ rkr$json$parse_object_entity';
-		# TODO Exception
+		CALL rkr$exception('rkr$json$parse_container', CONCAT('invalid character found at position ', arg_cursor, ': ', SUBSTR(arg_src, arg_cursor, 1)));
 	END IF;
 END//
 
@@ -43,6 +45,7 @@ BEGIN
 	SET arg_src = LTRIM(arg_src);
 	SET arg_cursor = arg_cursor + 1;
 
+	CALL rkr$debug(SUBSTR(arg_src, arg_cursor, 1));
 	IF SUBSTR(arg_src, arg_cursor, 1) != '}' THEN
 		REPEAT
 			CALL rkr$json$parse_object_entity(arg_src, arg_cursor, arg_result);
@@ -89,8 +92,7 @@ BEGIN
 	SET arg_cursor = arg_cursor + 1;
 
 	IF SUBSTR(arg_src, arg_cursor, 1) != ':' THEN
-		# TODO Exception
-		SET @debug = 'EXCEPTION @ rkr$json$parse_object_entity';
+		CALL rkr$exception('rkr$json$parse_object_entity', CONCAT('invalid character found at position ', arg_cursor, ': ', SUBSTR(arg_src, arg_cursor, 1)));
 	END IF;
 
 	SET arg_cursor = arg_cursor + 1;

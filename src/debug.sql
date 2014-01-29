@@ -11,4 +11,14 @@ BEGIN
 END//
 
 
+DROP PROCEDURE IF EXISTS rkr$exception//
+CREATE PROCEDURE rkr$exception(IN location LONGTEXT CHARSET utf8, IN message LONGTEXT CHARSET utf8)
+	NO SQL
+	SQL SECURITY INVOKER
+	DETERMINISTIC
+BEGIN
+	CALL rkr$debug(CONCAT('EXCEPTION @ ', location, ': ', message, "\n"));
+END//
+
+
 DELIMITER ;
