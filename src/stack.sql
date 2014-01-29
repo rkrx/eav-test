@@ -7,11 +7,10 @@ CREATE PROCEDURE rkr$stack$push(INOUT stack LONGTEXT CHARSET utf8, IN val LONGTE
     SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
-	IF ISNULL(val) THEN
-		SET stack = CONCAT('N:::', stack);
-	ELSE
-		SET stack = CONCAT('S:', LENGTH(val), ':', val, ':', stack);
-	END IF;
+	DECLARE newStack LONGTEXT CHARSET utf8;
+	CALL rkr$array$push(newStack, val);
+	CALL rkr$array$push(newStack, stack);
+	SET stack = newStack;
 END//
 
 
@@ -21,21 +20,8 @@ CREATE PROCEDURE rkr$stack$pop(INOUT stack LONGTEXT CHARSET utf8, OUT val LONGTE
 	SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
-	DECLARE type CHAR CHARSET utf8;
-	DECLARE pos INT;
-	DECLARE len INT;
-
-	SET type = SUBSTR(stack, 1, 1);
-
-	IF type = 'N' THEN
-		SET val = null;
-		SET stack = SUBSTRING(stack, 5);
-	ELSE
-		SET pos = LOCATE(':', stack, 3);
-		SET len = SUBSTRING(stack, 3, pos - 3);
-		SET val = SUBSTRING(stack, pos + 1, len);
-		SET stack = SUBSTRING(stack, pos + len + 2);
-	END IF;
+	SET val = rkr$array$get(stack, 1);
+	SET stack = rkr$array$get(stack, 2);
 END//
 
 
