@@ -1,69 +1,8 @@
-SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT;
-SET NAMES utf8;
-SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
-SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO';
-
-CREATE TABLE IF NOT EXISTS rkr__eav__entities (
-	id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	parent_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
-	entity_create_date datetime DEFAULT '2000-01-01 00:00:00',
-	entity_modify_date timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	entity_path VARCHAR(1024) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
-	entity_name VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	PRIMARY KEY (id),
-	UNIQUE KEY entity_name (entity_name, parent_id),
-	KEY entity_path (entity_path(255)),
-	KEY FK_rkr__eav__entities_rkr__eav__entities (parent_id),
-	CONSTRAINT FK_rkr__eav__entities_rkr__eav__entities FOREIGN KEY (parent_id) REFERENCES rkr__eav__entities (id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS rkr__eav__entity_attributes (
-	id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	entity_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	attr_name VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	attr_type ENUM('int','dec','str','date') CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'str',
-	PRIMARY KEY (id),
-	UNIQUE KEY unique_attribute (entity_id, attr_name),
-	CONSTRAINT FK_rkr__eav__attributes_rkr__eav__entities FOREIGN KEY (entity_id) REFERENCES rkr__eav__entities (id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS rkr__eav__entity_attribute_values_date (
-	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	attr_value DATETIME DEFAULT NULL,
-	PRIMARY KEY (attr_id),
-	CONSTRAINT FK_rkr__eav__values_date_rkr__eav__attributes FOREIGN KEY (attr_id) REFERENCES rkr__eav__entity_attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS rkr__eav__entity_attribute_values_dec (
-	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	attr_value DOUBLE DEFAULT NULL,
-	PRIMARY KEY (attr_id),
-	CONSTRAINT FK_rkr__eav__values_dec_rkr__eav__attributes FOREIGN KEY (attr_id) REFERENCES rkr__eav__entity_attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS rkr__eav__entity_attribute_values_int (
-	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	attr_value INT(11) DEFAULT NULL,
-	PRIMARY KEY (attr_id),
-	CONSTRAINT FK_rkr__eav__values_int_rkr__eav__attributes FOREIGN KEY (attr_id) REFERENCES rkr__eav__entity_attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-CREATE TABLE IF NOT EXISTS rkr__eav__entity_attribute_values_str (
-	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	attr_value longtext COLLATE utf8_unicode_ci,
-	PRIMARY KEY (attr_id),
-	CONSTRAINT FK_rkr__eav__values_str_rkr__eav__attributes FOREIGN KEY (attr_id) REFERENCES rkr__eav__entity_attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
-DROP FUNCTION IF EXISTS rkr__eav__entity__attribute__get;
 DELIMITER //
-CREATE FUNCTION rkr__eav__entity__attribute__get(arg_entity_id CHAR(36) CHARSET latin1, arg_attribute VARCHAR(255) CHARSET latin1, arg_default LONGTEXT CHARSET utf8)
+
+
+DROP FUNCTION IF EXISTS rkr$eav$entity$attribute$get //
+CREATE FUNCTION rkr$eav$entity$attribute$get(arg_entity_id CHAR(36) CHARSET latin1, arg_attribute VARCHAR(255) CHARSET latin1, arg_default LONGTEXT CHARSET utf8)
 	RETURNS LONGTEXT CHARSET utf8
 	SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -119,9 +58,9 @@ END//
 DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__eav__entity__attribute__has;
+DROP FUNCTION IF EXISTS rkr$eav$entity$attribute$has;
 DELIMITER //
-CREATE FUNCTION rkr__eav__entity__attribute__has(arg_entity_id CHAR(36) CHARSET latin1) RETURNS TINYINT(1)
+CREATE FUNCTION rkr$eav$entity$attribute$has(arg_entity_id CHAR(36) CHARSET latin1) RETURNS TINYINT(1)
     READS SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -143,9 +82,9 @@ END//
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__eav__entity__attribute__set;
+DROP PROCEDURE IF EXISTS rkr$eav$entity$attribute$set;
 DELIMITER //
-CREATE PROCEDURE rkr__eav__entity__attribute__set(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_attribute VARCHAR(255) CHARSET latin1, IN arg_type VARCHAR(50), IN arg_value LONGTEXT CHARSET utf8)
+CREATE PROCEDURE rkr$eav$entity$attribute$set(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_attribute VARCHAR(255) CHARSET latin1, IN arg_type VARCHAR(50), IN arg_value LONGTEXT CHARSET utf8)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -181,9 +120,9 @@ END//
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__eav__entity__build_xml_attributes;
+DROP PROCEDURE IF EXISTS rkr$eav$entity$build_xml_attributes;
 DELIMITER //
-CREATE PROCEDURE rkr__eav__entity__build_xml_attributes(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_level INT, OUT arg_out LONGTEXT CHARSET utf8)
+CREATE PROCEDURE rkr$eav$entity$build_xml_attributes(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_level INT, OUT arg_out LONGTEXT CHARSET utf8)
 	READS SQL DATA
 	SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -215,13 +154,13 @@ BEGIN
 			LEAVE getAttributes;
 		END IF;
 		
-		SET attrValue = rkr__eav__entity__attribute__get(arg_entity_id, attrName, '');
+		SET attrValue = rkr$eav$entity$attribute$get(arg_entity_id, attrName, '');
 		
 		SET ls = REPEAT("\t", arg_level);
 		
 		SET arg_out = CONCAT(arg_out, 
-				ls, '<a type="', attrType, '" name="', rkr__xml__escape(attrName), '">',
-					rkr__xml__escape(attrValue),
+				ls, '<a type="', attrType, '" name="', rkr$xml$escape(attrName), '">',
+					rkr$xml$escape(attrValue),
 				'</a>', "\n"
 			);
 	END LOOP getAttributes;
@@ -231,9 +170,9 @@ END//
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__eav__entity__build_xml_children;
+DROP PROCEDURE IF EXISTS rkr$eav$entity$build_xml_children;
 DELIMITER //
-CREATE PROCEDURE rkr__eav__entity__build_xml_children(IN arg_id CHAR(36) CHARSET latin1, IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT CHARSET utf8)
+CREATE PROCEDURE rkr$eav$entity$build_xml_children(IN arg_id CHAR(36) CHARSET latin1, IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT CHARSET utf8)
     READS SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -259,7 +198,7 @@ BEGIN
 				LEAVE getChildren;
 			END IF;
 			
-			CALL rkr__eav__entity__build_xml_from_id(childId, arg_level, arg_max_level, @childContent);
+			CALL rkr$eav$entity$build_xml_from_id(childId, arg_level, arg_max_level, @childContent);
 			SET arg_out = CONCAT(arg_out, @childContent);
 		END LOOP getChildren;
 		
@@ -269,9 +208,9 @@ END//
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__eav__entity__build_xml_from_id;
+DROP PROCEDURE IF EXISTS rkr$eav$entity$build_xml_from_id;
 DELIMITER //
-CREATE PROCEDURE rkr__eav__entity__build_xml_from_id(IN arg_id CHAR(36), IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT CHARSET utf8)
+CREATE PROCEDURE rkr$eav$entity$build_xml_from_id(IN arg_id CHAR(36), IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT CHARSET utf8)
     READS SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -297,12 +236,12 @@ BEGIN
 		id = arg_id;
 	
 	IF NOT ISNULL(entityName) THEN
-		CALL rkr__eav__entity__build_xml_children(arg_id, arg_level + 1, arg_max_level, entityChildren);
-		CALL rkr__eav__entity__build_xml_attributes(arg_id, arg_level + 1, entityAttributes);
+		CALL rkr$eav$entity$build_xml_children(arg_id, arg_level + 1, arg_max_level, entityChildren);
+		CALL rkr$eav$entity$build_xml_attributes(arg_id, arg_level + 1, entityAttributes);
 		
 		SET @ls = REPEAT("\t", arg_level);
 		SET arg_out = CONCAT(
-				@ls, '<e id="', arg_id, '" name="', rkr__xml__escape(entityName), '">', "\n",
+				@ls, '<e id="', arg_id, '" name="', rkr$xml$escape(entityName), '">', "\n",
 					entityChildren,
 					entityAttributes,
 				@ls, '</e>', "\n"
@@ -312,9 +251,9 @@ END//
 DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__eav__entity__fetch_xml;
+DROP FUNCTION IF EXISTS rkr$eav$entity$fetch_xml;
 DELIMITER //
-CREATE FUNCTION rkr__eav__entity__fetch_xml(arg_path VARCHAR(512) CHARSET latin1, arg_max_level INT)
+CREATE FUNCTION rkr$eav$entity$fetch_xml(arg_path VARCHAR(512) CHARSET latin1, arg_max_level INT)
 	RETURNS LONGTEXT CHARSET utf8
     READS SQL DATA
     SQL SECURITY INVOKER
@@ -323,16 +262,16 @@ BEGIN
 	DECLARE id CHAR(36) DEFAULT null;
 	DECLARE res LONGTEXT;
 	
-	SET id = rkr__eav__entity__get_id_from_path(arg_path, 0);
-	CALL rkr__eav__entity__build_xml_from_id(id, 0, arg_max_level, res);
+	SET id = rkr$eav$entity$get_id_from_path(arg_path, 0);
+	CALL rkr$eav$entity$build_xml_from_id(id, 0, arg_max_level, res);
 	RETURN res;
 END//
 DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__eav__entity__get_id_from_path;
+DROP FUNCTION IF EXISTS rkr$eav$entity$get_id_from_path;
 DELIMITER //
-CREATE FUNCTION rkr__eav__entity__get_id_from_path(arg_path VARCHAR(255) CHARSET latin1, createIfMissing TINYINT(1))
+CREATE FUNCTION rkr$eav$entity$get_id_from_path(arg_path VARCHAR(255) CHARSET latin1, createIfMissing TINYINT(1))
 	RETURNS CHAR(36) CHARSET latin1
     READS SQL DATA
     SQL SECURITY INVOKER
@@ -344,10 +283,10 @@ BEGIN
 	DECLARE xParentId CHAR(36) DEFAULT null;
 	DECLARE xPart VARCHAR(1024) DEFAULT '';
 
-	SET xPathDepth = rkr__eav__path__get_depth(arg_path);
+	SET xPathDepth = rkr$eav$path$get_depth(arg_path);
 	
 	WHILE i <= xPathDepth DO
-		SET xPart = rkr__eav__path__get_part(arg_path, i);
+		SET xPart = rkr$eav$path$get_part(arg_path, i);
 		SET xParentId = xId;
 		SET xId = null;
 		
@@ -374,7 +313,7 @@ BEGIN
 					parent_id = xParentId,
 					entity_name = xPart;
 				
-				CALL rkr__eav__entity__update_paths();
+				CALL rkr$eav$entity$update_paths();
 			ELSE
 				RETURN null;
 			END IF;
@@ -388,9 +327,9 @@ END//
 DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__eav__entity__get_path_from_id;
+DROP FUNCTION IF EXISTS rkr$eav$entity$get_path_from_id;
 DELIMITER //
-CREATE FUNCTION rkr__eav__entity__get_path_from_id(arg_id CHAR(36) CHARSET latin1)
+CREATE FUNCTION rkr$eav$entity$get_path_from_id(arg_id CHAR(36) CHARSET latin1)
 	RETURNS VARCHAR(512) CHARSET latin1
     READS SQL DATA
     SQL SECURITY INVOKER
@@ -421,7 +360,7 @@ BEGIN
 		SET xId = xParentId;
 		
 		IF NOT ISNULL(xName) THEN
-			SET xPath = rkr__eav__path__add(xName, xPath);
+			SET xPath = rkr$eav$path$add(xName, xPath);
 		END IF;
 	UNTIL ISNULL(xParentId) OR ISNULL(xId) END REPEAT;
 	
@@ -430,23 +369,23 @@ END//
 DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__eav__entity__remove;
+DROP FUNCTION IF EXISTS rkr$eav$entity$remove;
 DELIMITER //
-CREATE FUNCTION rkr__eav__entity__remove(path VARCHAR(512) CHARSET latin1)
+CREATE FUNCTION rkr$eav$entity$remove(path VARCHAR(512) CHARSET latin1)
 	RETURNS TINYINT(1)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
-	DELETE FROM rkr__eav__entities WHERE id = rkr__eav__entity__get_id_from_path(path, 0);
+	DELETE FROM rkr__eav__entities WHERE id = rkr$eav$entity$get_id_from_path(path, 0);
 	RETURN ROW_COUNT() > 0;
 END//
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__eav__entity__store_attributes;
+DROP PROCEDURE IF EXISTS rkr$eav$entity$store_attributes;
 DELIMITER //
-CREATE PROCEDURE rkr__eav__entity__store_attributes(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_xpath VARCHAR(512) CHARSET utf8)
+CREATE PROCEDURE rkr$eav$entity$store_attributes(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_xpath VARCHAR(512) CHARSET utf8)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -457,15 +396,15 @@ BEGIN
 	DECLARE xAttrValue LONGTEXT DEFAULT 0;
 	DECLARE i INT;
 	
-	SET xAttrCount = EXTRACTVALUE(@rkr__eav__xml_data, CONCAT('count(', arg_xpath, '/a)'));
+	SET xAttrCount = EXTRACTVALUE(@rkr$eav$xml_data, CONCAT('count(', arg_xpath, '/a)'));
 	
 	SET i = 1;
 	WHILE i <= xAttrCount DO
-		SET xAttrName = EXTRACTVALUE(@rkr__eav__xml_data, CONCAT(arg_xpath, '/a[', i, ']/@name'));
-		SET xAttrType = EXTRACTVALUE(@rkr__eav__xml_data, CONCAT(arg_xpath, '/a[', i, ']/@type'));
-		SET xAttrValue = EXTRACTVALUE(@rkr__eav__xml_data, CONCAT(arg_xpath, '/a[', i, ']'));
+		SET xAttrName = EXTRACTVALUE(@rkr$eav$xml_data, CONCAT(arg_xpath, '/a[', i, ']/@name'));
+		SET xAttrType = EXTRACTVALUE(@rkr$eav$xml_data, CONCAT(arg_xpath, '/a[', i, ']/@type'));
+		SET xAttrValue = EXTRACTVALUE(@rkr$eav$xml_data, CONCAT(arg_xpath, '/a[', i, ']'));
 		
-		CALL rkr__eav__entity__attribute__set(arg_entity_id, xAttrName, xAttrType, xAttrValue);
+		CALL rkr$eav$entity$attribute$set(arg_entity_id, xAttrName, xAttrType, xAttrValue);
 		
 		SET i = i + 1;
 	END WHILE;
@@ -473,9 +412,9 @@ END//
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__eav__entity__store_entity;
+DROP PROCEDURE IF EXISTS rkr$eav$entity$store_entity;
 DELIMITER //
-CREATE PROCEDURE rkr__eav__entity__store_entity(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_xpath VARCHAR(255) CHARSET utf8)
+CREATE PROCEDURE rkr$eav$entity$store_entity(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_xpath VARCHAR(255) CHARSET utf8)
 	MODIFIES SQL DATA
 	SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -489,9 +428,9 @@ BEGIN
 	DECLARE xAttrValue LONGTEXT DEFAULT 0;
 	DECLARE i INT;
 	
-	SET xEntityName = EXTRACTVALUE(@rkr__eav__xml_data, CONCAT(arg_xpath, '/@name'));
-	SET xChildCount = EXTRACTVALUE(@rkr__eav__xml_data, CONCAT('count(', arg_xpath, '/e)'));
-	SET xAttrCount = xAttrCount + EXTRACTVALUE(@rkr__eav__xml_data, CONCAT('count(', arg_xpath, '/a)'));
+	SET xEntityName = EXTRACTVALUE(@rkr$eav$xml_data, CONCAT(arg_xpath, '/@name'));
+	SET xChildCount = EXTRACTVALUE(@rkr$eav$xml_data, CONCAT('count(', arg_xpath, '/e)'));
+	SET xAttrCount = xAttrCount + EXTRACTVALUE(@rkr$eav$xml_data, CONCAT('count(', arg_xpath, '/a)'));
 	
 	DELETE FROM rkr__eav__entities WHERE parent_id = arg_entity_id AND entity_name = xEntityName;
 	
@@ -505,18 +444,18 @@ BEGIN
 	
 	SET i = 1;
 	WHILE i <= xChildCount DO
-		CALL rkr__eav__entity__store_entity(xEntityId, CONCAT(arg_xpath, '/e[', i, ']'));
+		CALL rkr$eav$entity$store_entity(xEntityId, CONCAT(arg_xpath, '/e[', i, ']'));
 		SET i = i + 1;
 	END WHILE;
 		
-	CALL rkr__eav__entity__store_attributes(arg_entity_id, arg_xpath);
+	CALL rkr$eav$entity$store_attributes(arg_entity_id, arg_xpath);
 END//
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__eav__entity__store_xml;
+DROP PROCEDURE IF EXISTS rkr$eav$entity$store_xml;
 DELIMITER //
-CREATE PROCEDURE rkr__eav__entity__store_xml(IN arg_path VARCHAR(255) CHARSET latin1, IN arg_xml LONGTEXT CHARSET utf8)
+CREATE PROCEDURE rkr$eav$entity$store_xml(IN arg_path VARCHAR(255) CHARSET latin1, IN arg_xml LONGTEXT CHARSET utf8)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -524,22 +463,22 @@ BEGIN
 	DECLARE xEntityId CHAR(36) DEFAULT null;
 	DECLARE xStack LONGTEXT;
 	
-	SET xEntityId = rkr__eav__entity__get_id_from_path(arg_path, 1);
+	SET xEntityId = rkr$eav$entity$get_id_from_path(arg_path, 1);
 
-	CALL rkr__stack__push(xStack, @rkr__eav__xml_data);
+	CALL rkr$stack$push(xStack, @rkr$eav$xml_data);
 
-	SET @rkr__eav__xml_data = arg_xml;
-	CALL rkr__eav__entity__store_entity(xEntityId, '/e');
-	CALL rkr__eav__entity__update_paths();
+	SET @rkr$eav$xml_data = arg_xml;
+	CALL rkr$eav$entity$store_entity(xEntityId, '/e');
+	CALL rkr$eav$entity$update_paths();
 
-	CALL rkr__stack__pop(xStack, @rkr__eav__xml_data);
+	CALL rkr$stack$pop(xStack, @rkr$eav$xml_data);
 END//
 DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__eav__entity__update_paths;
+DROP PROCEDURE IF EXISTS rkr$eav$entity$update_paths;
 DELIMITER //
-CREATE PROCEDURE rkr__eav__entity__update_paths()
+CREATE PROCEDURE rkr$eav$entity$update_paths()
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -547,16 +486,16 @@ BEGIN
 	UPDATE
 		rkr__eav__entities
 	SET
-		entity_path = rkr__eav__entity__get_path_from_id(id)
+		entity_path = rkr$eav$entity$get_path_from_id(id)
 	WHERE
 		ISNULL(entity_path);
 END//
 DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__eav__path__add;
+DROP FUNCTION IF EXISTS rkr$eav$path$add;
 DELIMITER //
-CREATE FUNCTION rkr__eav__path__add(arg_path VARCHAR(512) CHARSET latin1, arg_part VARCHAR(512) CHARSET latin1)
+CREATE FUNCTION rkr$eav$path$add(arg_path VARCHAR(512) CHARSET latin1, arg_part VARCHAR(512) CHARSET latin1)
 	RETURNS VARCHAR(512) CHARSET latin1
     NO SQL
     SQL SECURITY INVOKER
@@ -569,9 +508,9 @@ END//
 DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__eav__path__get_depth;
+DROP FUNCTION IF EXISTS rkr$eav$path$get_depth;
 DELIMITER //
-CREATE FUNCTION rkr__eav__path__get_depth(path VARCHAR(255) CHARSET latin1)
+CREATE FUNCTION rkr$eav$path$get_depth(path VARCHAR(255) CHARSET latin1)
 	RETURNS INT(11)
     NO SQL
     DETERMINISTIC
@@ -583,9 +522,9 @@ END//
 DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__eav__path__get_part;
+DROP FUNCTION IF EXISTS rkr$eav$path$get_part;
 DELIMITER //
-CREATE FUNCTION rkr__eav__path__get_part(arg_path VARCHAR(255) CHARSET latin1, arg_pos INT)
+CREATE FUNCTION rkr$eav$path$get_part(arg_path VARCHAR(255) CHARSET latin1, arg_pos INT)
 	RETURNS VARCHAR(255) CHARSET latin1
     NO SQL
     SQL SECURITY INVOKER
@@ -595,6 +534,9 @@ BEGIN
 	RETURN REPLACE(SUBSTRING(SUBSTRING_INDEX(arg_path, delimiter, arg_pos), LENGTH(SUBSTRING_INDEX(arg_path, delimiter, arg_pos - 1)) + 1), delimiter, '');
 END//
 DELIMITER ;
+
+
+SOURCE src/eav/schema.sql
 
 
 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '');

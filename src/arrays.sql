@@ -1,12 +1,8 @@
-SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT;
-SET NAMES utf8;
-SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
-SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO';
-
-
-DROP PROCEDURE IF EXISTS rkr__array__push;
 DELIMITER //
-CREATE PROCEDURE rkr__array__push(INOUT arg_data LONGTEXT CHARSET utf8, IN arg_value LONGTEXT CHARSET utf8)
+
+
+DROP PROCEDURE IF EXISTS rkr$array$push //
+CREATE PROCEDURE rkr$array$push(INOUT arg_data LONGTEXT CHARSET utf8, IN arg_value LONGTEXT CHARSET utf8)
     NO SQL
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -21,12 +17,10 @@ BEGIN
 		';'
 	);
 END//
-DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__array__count;
-DELIMITER //
-CREATE FUNCTION rkr__array__count(arg_data LONGTEXT CHARSET utf8)
+DROP FUNCTION IF EXISTS rkr$array$count //
+CREATE FUNCTION rkr$array$count(arg_data LONGTEXT CHARSET utf8)
 	RETURNS INT
     NO SQL
     SQL SECURITY INVOKER
@@ -49,12 +43,10 @@ BEGIN
 
 	RETURN i;
 END//
-DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__array__index__get_location;
-DELIMITER //
-CREATE PROCEDURE rkr__array__index__get_location(arg_data LONGTEXT CHARSET utf8, arg_index INT, INOUT arg_pos INT, INOUT arg_start INT, INOUT arg_len INT)
+DROP PROCEDURE IF EXISTS rkr$array$index__get_location //
+CREATE PROCEDURE rkr$array$index__get_location(arg_data LONGTEXT CHARSET utf8, arg_index INT, INOUT arg_pos INT, INOUT arg_start INT, INOUT arg_len INT)
     NO SQL
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -86,12 +78,10 @@ body: BEGIN
 
 	SET arg_pos = 0;
 END//
-DELIMITER ;
 
 
-DROP FUNCTION IF EXISTS rkr__array__get;
-DELIMITER //
-CREATE FUNCTION rkr__array__get(arg_data LONGTEXT CHARSET utf8, arg_index INT)
+DROP FUNCTION IF EXISTS rkr$array$get //
+CREATE FUNCTION rkr$array$get(arg_data LONGTEXT CHARSET utf8, arg_index INT)
 	RETURNS LONGTEXT CHARSET utf8
     NO SQL
     SQL SECURITY INVOKER
@@ -101,7 +91,7 @@ BEGIN
 	DECLARE xStart INT DEFAULT 0;
 	DECLARE xLen INT DEFAULT 0;
 
-	CALL rkr__array__index__get_location(arg_data, arg_index, xPos, xStart, xLen);
+	CALL rkr$array$index__get_location(arg_data, arg_index, xPos, xStart, xLen);
 
 	IF SUBSTR(arg_data, xStart - 2, 1) = 'N' THEN
 		RETURN null;
@@ -109,12 +99,10 @@ BEGIN
 
 	RETURN SUBSTR(arg_data, xStart, xLen);
 END//
-DELIMITER ;
 
 
-DROP PROCEDURE IF EXISTS rkr__array__remove;
-DELIMITER //
-CREATE PROCEDURE rkr__array__remove(INOUT arg_data LONGTEXT CHARSET utf8, IN arg_index INT)
+DROP PROCEDURE IF EXISTS rkr$array$remove //
+CREATE PROCEDURE rkr$array$remove(INOUT arg_data LONGTEXT CHARSET utf8, IN arg_index INT)
     NO SQL
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -127,7 +115,7 @@ body: BEGIN
 		LEAVE body;
 	END IF;
 
-	CALL rkr__array__index__get_location(arg_data, arg_index, xPos, xStart, xLen);
+	CALL rkr$array$index__get_location(arg_data, arg_index, xPos, xStart, xLen);
 
 	IF IFNULL(xPos, 0) < 1 THEN
 		LEAVE body;
@@ -138,9 +126,6 @@ body: BEGIN
 		SUBSTR(arg_data, xStart + xLen + 1)
 	);
 END//
+
+
 DELIMITER ;
-
-
-SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '');
-SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS);
-SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT;
