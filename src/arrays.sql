@@ -34,7 +34,7 @@ BEGIN
 	DECLARE xLen INT;
 	DECLARE i INT DEFAULT 0;
 
-	IF NOT rkr$array$init(arg_data) THEN
+	IF NOT rkr$array$valid(arg_data) THEN
 		RETURN 0;
 	END IF;
 
@@ -152,6 +152,7 @@ CREATE PROCEDURE rkr$array$init(INOUT arg_data LONGTEXT CHARSET utf8)
     SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
+	SET arg_data = IFNULL(arg_data, '');
 	IF NOT rkr$array$valid(arg_data) THEN
 		SET arg_data = 'a$';
 	END IF;

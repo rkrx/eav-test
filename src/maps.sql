@@ -4,11 +4,11 @@ DELIMITER //
 DROP FUNCTION IF EXISTS rkr$map$get //
 CREATE FUNCTION rkr$map$get(arg_data LONGTEXT CHARSET utf8, arg_key VARCHAR(512) CHARSET utf8, arg_default LONGTEXT CHARSET utf8)
 	RETURNS LONGTEXT CHARSET utf8
-    NO SQL
-    SQL SECURITY INVOKER
+	NO SQL
+	SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
-	DECLARE xCount INT DEFAULT rkr$array$count(arg_data);
+	DECLARE xCount INT DEFAULT 0;
 	DECLARE xItem LONGTEXT CHARSET utf8;
 	DECLARE i INT DEFAULT 1;
 
@@ -16,8 +16,11 @@ BEGIN
 		RETURN arg_default;
 	END IF;
 
-	WHILE i < xCount DO
-		SET xItem = rkr$array$get(i);
+	SET arg_data = SUBSTR(arg_data, 3);
+	SET xCount = rkr$array$count(arg_data);
+
+	WHILE i <= xCount DO
+		SET xItem = rkr$array$get(arg_data, i);
 		IF rkr$array$get(xItem, 1) = arg_key THEN
 			RETURN rkr$array$get(xItem, 2);
 		END IF;
@@ -30,8 +33,8 @@ END//
 
 DROP PROCEDURE IF EXISTS rkr$map$set //
 CREATE PROCEDURE rkr$map$set(INOUT arg_data LONGTEXT CHARSET utf8, IN arg_key LONGTEXT CHARSET utf8, IN arg_value LONGTEXT CHARSET utf8)
-    NO SQL
-    SQL SECURITY INVOKER
+	NO SQL
+	SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
 	DECLARE xCount INT DEFAULT rkr$array$count(arg_data);
@@ -83,6 +86,7 @@ CREATE PROCEDURE rkr$map$init(INOUT arg_data LONGTEXT CHARSET utf8)
 	SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
+	SET arg_data = IFNULL(arg_data, '');
 	IF NOT rkr$map$valid(arg_data) THEN
 		SET arg_data = 'm$';
 	END IF;
@@ -96,7 +100,7 @@ CREATE FUNCTION rkr$map$valid(arg_data LONGTEXT CHARSET utf8)
 	SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
-	RETURN IF(SUBSTR(arg_data, 1, 3) = 'm$', true, false);
+	RETURN IF(SUBSTR(arg_data, 1, 2) = 'm$', true, false);
 END //
 
 
