@@ -3,18 +3,6 @@
 /*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 
-
-CREATE TABLE IF NOT EXISTS eav__attributes (
-	id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	entity_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	attr_name VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
-	attr_type ENUM('int','dec','str','date') CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'str',
-	PRIMARY KEY (id),
-	UNIQUE KEY unique_attribute (entity_id,attr_name),
-	CONSTRAINT FK_eav__attributes_eav__entities FOREIGN KEY (entity_id) REFERENCES eav__entities (id) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
-
-
 CREATE TABLE IF NOT EXISTS eav__entities (
 	id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
 	parent_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
@@ -23,42 +11,53 @@ CREATE TABLE IF NOT EXISTS eav__entities (
 	entity_path VARCHAR(1024) CHARACTER SET latin1 COLLATE latin1_bin DEFAULT NULL,
 	entity_name VARCHAR(255) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
 	PRIMARY KEY (id),
-	UNIQUE KEY entity_name (entity_name,parent_id),
+	UNIQUE KEY entity_name (entity_name, parent_id),
 	KEY entity_path (entity_path(255)),
 	KEY FK_eav__entities_eav__entities (parent_id),
 	CONSTRAINT FK_eav__entities_eav__entities FOREIGN KEY (parent_id) REFERENCES eav__entities (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
-CREATE TABLE IF NOT EXISTS eav__values_date (
+CREATE TABLE IF NOT EXISTS eav__entity_attributes (
+	id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+	entity_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+	attr_name VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
+	attr_type ENUM('int','dec','str','date') CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'str',
+	PRIMARY KEY (id),
+	UNIQUE KEY unique_attribute (entity_id, attr_name),
+	CONSTRAINT FK_eav__attributes_eav__entities FOREIGN KEY (entity_id) REFERENCES eav__entities (id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS eav__entity_attribute_values_date (
 	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
 	attr_value DATETIME DEFAULT NULL,
 	PRIMARY KEY (attr_id),
-	CONSTRAINT FK_eav__values_date_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
+	CONSTRAINT FK_eav__values_date_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__entity_attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
-CREATE TABLE IF NOT EXISTS eav__values_dec (
+CREATE TABLE IF NOT EXISTS eav__entity_attribute_values_dec (
 	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
 	attr_value DOUBLE DEFAULT NULL,
 	PRIMARY KEY (attr_id),
-	CONSTRAINT FK_eav__values_dec_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
+	CONSTRAINT FK_eav__values_dec_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__entity_attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
-CREATE TABLE IF NOT EXISTS eav__values_int (
+CREATE TABLE IF NOT EXISTS eav__entity_attribute_values_int (
 	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
 	attr_value INT(11) DEFAULT NULL,
 	PRIMARY KEY (attr_id),
-	CONSTRAINT FK_eav__values_int_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
+	CONSTRAINT FK_eav__values_int_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__entity_attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
-CREATE TABLE IF NOT EXISTS eav__values_str (
+CREATE TABLE IF NOT EXISTS eav__entity_attribute_values_str (
 	attr_id CHAR(36) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT '',
 	attr_value longtext COLLATE utf8_unicode_ci,
 	PRIMARY KEY (attr_id),
-	CONSTRAINT FK_eav__values_str_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
+	CONSTRAINT FK_eav__values_str_eav__attributes FOREIGN KEY (attr_id) REFERENCES eav__entity_attributes (id) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -89,7 +88,7 @@ BEGIN
 		xType,
 		xCheck
 	FROM
-		eav__attributes
+		eav__entity_attributes
 	WHERE
 		entity_id = arg_entity_id
 		AND
@@ -100,19 +99,19 @@ BEGIN
 	END IF;
 
 	IF xType = 'int' THEN
-		SELECT attr_value INTO xValue FROM eav__values_int WHERE attr_id = xId;
+		SELECT attr_value INTO xValue FROM eav__entity_attribute_values_int WHERE attr_id = xId;
 	END IF;
 	
 	IF xType = 'dec' THEN
-		SELECT attr_value INTO xValue FROM eav__values_dec WHERE attr_id = xId;
+		SELECT attr_value INTO xValue FROM eav__entity_attribute_values_dec WHERE attr_id = xId;
 	END IF;
 	
 	IF xType = 'str' THEN
-		SELECT attr_value INTO xValue FROM eav__values_str WHERE attr_id = xId;
+		SELECT attr_value INTO xValue FROM eav__entity_attribute_values_str WHERE attr_id = xId;
 	END IF;
 	
 	IF xType = 'date' THEN
-		SELECT attr_value INTO xValue FROM eav__values_date WHERE attr_id = xId;
+		SELECT attr_value INTO xValue FROM eav__entity_attribute_values_date WHERE attr_id = xId;
 	END IF;
 	
 	RETURN xValue;
@@ -134,7 +133,7 @@ BEGIN
 	INTO
 		xId
 	FROM
-		eav__attributes
+		eav__entity_attributes
 	WHERE
 		entity_id = arg_entity_id
 	LIMIT 1;
@@ -155,28 +154,28 @@ BEGIN
 	
 	SET xId = UUID();
 	
-	DELETE FROM eav__attributes WHERE entity_id=arg_entity_id AND attr_name=arg_attribute;
+	DELETE FROM eav__entity_attributes WHERE entity_id=arg_entity_id AND attr_name=arg_attribute;
 	
 	INSERT INTO
-		eav__attributes
+		eav__entity_attributes
 		(id, entity_id, attr_name, attr_type)
 	VALUES
 		(xId, arg_entity_id, arg_attribute, arg_type);
 		
 	IF arg_type = 'str' THEN
-		INSERT INTO eav__values_str SET attr_id=xId, attr_value=arg_value;
+		INSERT INTO eav__entity_attribute_values_str SET attr_id=xId, attr_value=arg_value;
 	END IF;
 		
 	IF arg_type = 'int' THEN
-		INSERT INTO eav__values_int SET attr_id=xId, attr_value=arg_value;
+		INSERT INTO eav__entity_attribute_values_int SET attr_id=xId, attr_value=arg_value;
 	END IF;
 		
 	IF arg_type = 'dec' THEN
-		INSERT INTO eav__values_dec SET attr_id=xId, attr_value=arg_value;
+		INSERT INTO eav__entity_attribute_values_dec SET attr_id=xId, attr_value=arg_value;
 	END IF;
 		
 	IF arg_type = 'date' THEN
-		INSERT INTO eav__values_date SET attr_id=xId, attr_value=arg_value;
+		INSERT INTO eav__entity_attribute_values_date SET attr_id=xId, attr_value=arg_value;
 	END IF;
 END//
 DELIMITER ;
@@ -199,7 +198,7 @@ BEGIN
 			attr_name,
 			attr_type
 		FROM
-			eav__attributes
+			eav__entity_attributes
 		WHERE
 			entity_id = arg_entity_id;
 		
@@ -611,6 +610,11 @@ BEGIN
 END//
 DELIMITER ;
 
+DROP TABLE IF EXISTS eav__values_dec;
+DROP TABLE IF EXISTS eav__values_int;
+DROP TABLE IF EXISTS eav__values_str;
+DROP TABLE IF EXISTS eav__values_date;
+DROP TABLE IF EXISTS eav__attributes;
 
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;

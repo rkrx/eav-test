@@ -19,6 +19,7 @@ SET @xmlData = '
 				<a type="str" name="description">This is a test</a>
 				<a type="dec" name="price">99.99</a>
 				<a type="int" name="stock">100</a>
+				<a type="date" name="start-date">2014-02-15 12:00:00</a>
 			</e>
 		</e>
 		<a type="str" name="name">Test data-structure</a>
