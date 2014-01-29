@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS eav__values_str (
 
 DROP FUNCTION IF EXISTS eav__entity__attribute__get;
 DELIMITER //
-CREATE FUNCTION eav__entity__attribute__get(arg_entity_id CHAR(36), arg_attribute VARCHAR(255), arg_default LONGTEXT)
+CREATE FUNCTION eav__entity__attribute__get(arg_entity_id CHAR(36) CHARSET latin1, arg_attribute VARCHAR(255) CHARSET latin1, arg_default LONGTEXT CHARSET utf8)
 	RETURNS LONGTEXT CHARSET utf8
 	DETERMINISTIC
 BEGIN
@@ -121,7 +121,7 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__entity__attribute__has;
 DELIMITER //
-CREATE FUNCTION eav__entity__attribute__has(arg_entity_id CHAR(36)) RETURNS TINYINT(1)
+CREATE FUNCTION eav__entity__attribute__has(arg_entity_id CHAR(36) CHARSET latin1) RETURNS TINYINT(1)
     READS SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -145,7 +145,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS eav__entity__attribute__set;
 DELIMITER //
-CREATE PROCEDURE eav__entity__attribute__set(IN arg_entity_id CHAR(36), IN arg_attribute VARCHAR(255), IN arg_type VARCHAR(50), IN arg_value LONGTEXT)
+CREATE PROCEDURE eav__entity__attribute__set(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_attribute VARCHAR(255) CHARSET latin1, IN arg_type VARCHAR(50), IN arg_value LONGTEXT CHARSET utf8)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -183,7 +183,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS eav__entity__build_xml_attributes;
 DELIMITER //
-CREATE PROCEDURE eav__entity__build_xml_attributes(IN arg_entity_id CHAR(36), IN arg_level INT, OUT arg_out longtEXT)
+CREATE PROCEDURE eav__entity__build_xml_attributes(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_level INT, OUT arg_out LONGTEXT CHARSET utf8)
 	READS SQL DATA
 	DETERMINISTIC
 BEGIN
@@ -232,7 +232,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS eav__entity__build_xml_children;
 DELIMITER //
-CREATE PROCEDURE eav__entity__build_xml_children(IN arg_id CHAR(36), IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT)
+CREATE PROCEDURE eav__entity__build_xml_children(IN arg_id CHAR(36) CHARSET latin1, IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT CHARSET utf8)
     READS SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -270,7 +270,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS eav__entity__build_xml_from_id;
 DELIMITER //
-CREATE PROCEDURE eav__entity__build_xml_from_id(IN arg_id CHAR(36), IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT)
+CREATE PROCEDURE eav__entity__build_xml_from_id(IN arg_id CHAR(36), IN arg_level INT, IN arg_max_level INT, OUT arg_out LONGTEXT CHARSET utf8)
     READS SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -313,7 +313,7 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__entity__fetch_xml;
 DELIMITER //
-CREATE FUNCTION eav__entity__fetch_xml(arg_path VARCHAR(512), arg_max_level INT)
+CREATE FUNCTION eav__entity__fetch_xml(arg_path VARCHAR(512) CHARSET latin1, arg_max_level INT)
 	RETURNS LONGTEXT CHARSET utf8
     READS SQL DATA
     SQL SECURITY INVOKER
@@ -331,7 +331,7 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__entity__get_id_from_path;
 DELIMITER //
-CREATE FUNCTION eav__entity__get_id_from_path(path VARCHAR(255), createIfMissing TINYINT(1))
+CREATE FUNCTION eav__entity__get_id_from_path(arg_path VARCHAR(255) CHARSET latin1, createIfMissing TINYINT(1))
 	RETURNS CHAR(36) CHARSET latin1
     READS SQL DATA
     SQL SECURITY INVOKER
@@ -343,10 +343,10 @@ BEGIN
 	DECLARE xParentId CHAR(36) DEFAULT null;
 	DECLARE xPart VARCHAR(1024) DEFAULT '';
 
-	SET xPathDepth = eav__path__get_depth(path);
+	SET xPathDepth = eav__path__get_depth(arg_path);
 	
 	WHILE i <= xPathDepth DO
-		SET xPart = eav__path__get_part(path, i);
+		SET xPart = eav__path__get_part(arg_path, i);
 		SET xParentId = xId;
 		SET xId = null;
 		
@@ -389,7 +389,7 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__entity__get_path_from_id;
 DELIMITER //
-CREATE FUNCTION eav__entity__get_path_from_id(arg_id CHAR(36))
+CREATE FUNCTION eav__entity__get_path_from_id(arg_id CHAR(36) CHARSET latin1)
 	RETURNS VARCHAR(512) CHARSET latin1
     READS SQL DATA
     SQL SECURITY INVOKER
@@ -431,7 +431,7 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__entity__remove;
 DELIMITER //
-CREATE FUNCTION eav__entity__remove(path VARCHAR(512))
+CREATE FUNCTION eav__entity__remove(path VARCHAR(512) CHARSET latin1)
 	RETURNS TINYINT(1)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
@@ -445,7 +445,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS eav__entity__store_attributes;
 DELIMITER //
-CREATE PROCEDURE eav__entity__store_attributes(IN arg_entity_id CHAR(36), IN arg_xml LONGTEXT, IN arg_xpath VARCHAR(512))
+CREATE PROCEDURE eav__entity__store_attributes(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_xpath VARCHAR(512) CHARSET utf8)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -456,13 +456,13 @@ BEGIN
 	DECLARE xAttrValue LONGTEXT DEFAULT 0;
 	DECLARE i INT;
 	
-	SET xAttrCount = EXTRACTVALUE(arg_xml, CONCAT('count(', arg_xpath, '/a)'));
+	SET xAttrCount = EXTRACTVALUE(@eav__xml_data, CONCAT('count(', arg_xpath, '/a)'));
 	
 	SET i = 1;
 	WHILE i <= xAttrCount DO
-		SET xAttrName = EXTRACTVALUE(arg_xml, CONCAT(arg_xpath, '/a[', i, ']/@name'));
-		SET xAttrType = EXTRACTVALUE(arg_xml, CONCAT(arg_xpath, '/a[', i, ']/@type'));
-		SET xAttrValue = EXTRACTVALUE(arg_xml, CONCAT(arg_xpath, '/a[', i, ']'));
+		SET xAttrName = EXTRACTVALUE(@eav__xml_data, CONCAT(arg_xpath, '/a[', i, ']/@name'));
+		SET xAttrType = EXTRACTVALUE(@eav__xml_data, CONCAT(arg_xpath, '/a[', i, ']/@type'));
+		SET xAttrValue = EXTRACTVALUE(@eav__xml_data, CONCAT(arg_xpath, '/a[', i, ']'));
 		
 		CALL eav__entity__attribute__set(arg_entity_id, xAttrName, xAttrType, xAttrValue);
 		
@@ -474,7 +474,7 @@ DELIMITER ;
 
 DROP PROCEDURE IF EXISTS eav__entity__store_entity;
 DELIMITER //
-CREATE PROCEDURE eav__entity__store_entity(IN arg_entity_id CHAR(36), IN arg_xml LONGTEXT, IN arg_xpath VARCHAR(255))
+CREATE PROCEDURE eav__entity__store_entity(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_xpath VARCHAR(255) CHARSET utf8)
 	MODIFIES SQL DATA
 	DETERMINISTIC
 BEGIN
@@ -487,9 +487,9 @@ BEGIN
 	DECLARE xAttrValue LONGTEXT DEFAULT 0;
 	DECLARE i INT;
 	
-	SET xEntityName = EXTRACTVALUE(arg_xml, CONCAT(arg_xpath, '/@name'));
-	SET xChildCount = EXTRACTVALUE(arg_xml, CONCAT('count(', arg_xpath, '/e)'));
-	SET xAttrCount = xAttrCount + EXTRACTVALUE(arg_xml, CONCAT('count(', arg_xpath, '/a)'));
+	SET xEntityName = EXTRACTVALUE(@eav__xml_data, CONCAT(arg_xpath, '/@name'));
+	SET xChildCount = EXTRACTVALUE(@eav__xml_data, CONCAT('count(', arg_xpath, '/e)'));
+	SET xAttrCount = xAttrCount + EXTRACTVALUE(@eav__xml_data, CONCAT('count(', arg_xpath, '/a)'));
 	
 	DELETE FROM eav__entities WHERE parent_id = arg_entity_id AND entity_name = xEntityName;
 	
@@ -503,18 +503,18 @@ BEGIN
 	
 	SET i = 1;
 	WHILE i <= xChildCount DO
-		CALL eav__entity__store_entity(xEntityId, arg_xml, CONCAT(arg_xpath, '/e[', i, ']'));
+		CALL eav__entity__store_entity(xEntityId, CONCAT(arg_xpath, '/e[', i, ']'));
 		SET i = i + 1;
 	END WHILE;
 		
-	CALL eav__entity__store_attributes(arg_entity_id, arg_xml, arg_xpath);
+	CALL eav__entity__store_attributes(arg_entity_id, arg_xpath);
 END//
 DELIMITER ;
 
 
 DROP PROCEDURE IF EXISTS eav__entity__store_xml;
 DELIMITER //
-CREATE PROCEDURE eav__entity__store_xml(IN arg_path VARCHAR(255), IN arg_xml LONGTEXT)
+CREATE PROCEDURE eav__entity__store_xml(IN arg_path VARCHAR(255) CHARSET latin1, IN arg_xml LONGTEXT CHARSET utf8)
     MODIFIES SQL DATA
     SQL SECURITY INVOKER
 	DETERMINISTIC
@@ -522,8 +522,10 @@ BEGIN
 	DECLARE xEntityId CHAR(36) DEFAULT null;
 	
 	SET xEntityId = eav__entity__get_id_from_path(arg_path, 1);
-	CALL eav__entity__store_entity(xEntityId, arg_xml, '/e');
+	SET @eav__xml_data = arg_xml;
+	CALL eav__entity__store_entity(xEntityId, '/e');
 	CALL eav__entity__update_paths();
+	SET @eav__xml_data = '';
 END//
 DELIMITER ;
 
@@ -547,7 +549,7 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__path__add;
 DELIMITER //
-CREATE FUNCTION eav__path__add(arg_path VARCHAR(512), arg_part VARCHAR(512))
+CREATE FUNCTION eav__path__add(arg_path VARCHAR(512) CHARSET latin1, arg_part VARCHAR(512) CHARSET latin1)
 	RETURNS VARCHAR(512) CHARSET latin1
     NO SQL
     DETERMINISTIC
@@ -563,7 +565,8 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__path__get_depth;
 DELIMITER //
-CREATE FUNCTION eav__path__get_depth(path VARCHAR(255)) RETURNS int(11)
+CREATE FUNCTION eav__path__get_depth(path VARCHAR(255) CHARSET latin1)
+	RETURNS INT(11)
     NO SQL
     DETERMINISTIC
     SQL SECURITY INVOKER
@@ -576,7 +579,7 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__path__get_part;
 DELIMITER //
-CREATE FUNCTION eav__path__get_part(arg_path VARCHAR(255), arg_pos INT)
+CREATE FUNCTION eav__path__get_part(arg_path VARCHAR(255) CHARSET latin1, arg_pos INT)
 	RETURNS VARCHAR(255) CHARSET latin1
     NO SQL
     SQL SECURITY INVOKER
@@ -590,7 +593,8 @@ DELIMITER ;
 
 DROP FUNCTION IF EXISTS eav__xml__escape;
 DELIMITER //
-CREATE FUNCTION eav__xml__escape(arg_data LONGTEXT) RETURNS longtext CHARSET latin1
+CREATE FUNCTION eav__xml__escape(arg_data LONGTEXT CHARSET utf8)
+	RETURNS LONGTEXT CHARSET utf8
     NO SQL
     SQL SECURITY INVOKER
     DETERMINISTIC
