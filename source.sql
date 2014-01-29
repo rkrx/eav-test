@@ -66,6 +66,7 @@ DROP FUNCTION IF EXISTS eav__entity__attribute__get;
 DELIMITER //
 CREATE FUNCTION eav__entity__attribute__get(arg_entity_id CHAR(36) CHARSET latin1, arg_attribute VARCHAR(255) CHARSET latin1, arg_default LONGTEXT CHARSET utf8)
 	RETURNS LONGTEXT CHARSET utf8
+	SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
 	DECLARE xId CHAR(36) DEFAULT null;
@@ -185,6 +186,7 @@ DROP PROCEDURE IF EXISTS eav__entity__build_xml_attributes;
 DELIMITER //
 CREATE PROCEDURE eav__entity__build_xml_attributes(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_level INT, OUT arg_out LONGTEXT CHARSET utf8)
 	READS SQL DATA
+	SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
 	DECLARE finished INT DEFAULT 0;
@@ -476,6 +478,7 @@ DROP PROCEDURE IF EXISTS eav__entity__store_entity;
 DELIMITER //
 CREATE PROCEDURE eav__entity__store_entity(IN arg_entity_id CHAR(36) CHARSET latin1, IN arg_xpath VARCHAR(255) CHARSET utf8)
 	MODIFIES SQL DATA
+	SQL SECURITY INVOKER
 	DETERMINISTIC
 BEGIN
 	DECLARE xChildCount INT DEFAULT 0;
