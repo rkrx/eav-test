@@ -4,7 +4,7 @@ eav-test
 MySQL EAV Datastructure
 
 
-First, you need to set a recursion limit:
+First, you need import the source.sql. Then, you need to set a recursion limit:
 ```MYSQL
 SET max_sp_recursion_depth = 100;
 ```
